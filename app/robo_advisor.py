@@ -1,6 +1,11 @@
+
 from dotenv import load_dotenv
 import os
 import requests
+
+invalid_call = """{
+    \"Error Message\": \"Invalid API call. Please retry or visit the documentation (https://www.alphavantage.co/documentation/) for TIME_SERIES_DAILY.\"
+}"""
 
 load_dotenv()
 API_key = os.environ.get("ALPHAVANTAGE_API_KEY","something isnt right")
@@ -21,7 +26,20 @@ print("RECOMMENDATION REASON: TODO")
 print("-------------------------")
 print("HAPPY INVESTING!") 
 print("-------------------------") 
-symbol = "TSLA"
-response = requests.get(f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=TSLA&apikey={API_key}")
+while True:
+    while True:
+        symbol = input("Enter a stock ticker to pull information and recommendation: ")
+        if(len(symbol) < 1 or len(symbol) > 5):
+            print("Sorry, that ticker is not valid. Please try again.")
+        else:
+            break
+    symbol = symbol.upper()
+    response = requests.get(f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={API_key}")
+    if("Error Message" in response.text):
+        print("Sorry, that was not a stock ticker. Please try again.")
+        continue
+    break
+
+data = response.json()["Time Series (Daily)"]
 print(response.status_code)
 print(response.text)

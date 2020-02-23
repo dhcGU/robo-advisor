@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 
 from dotenv import load_dotenv
 import os
@@ -12,7 +14,6 @@ invalid_call = """{
 
 load_dotenv()
 API_key = os.environ.get("ALPHAVANTAGE_API_KEY","something isnt right")
-print(API_key) 
 
 while True:
     while True:
@@ -30,11 +31,25 @@ while True:
     break
 parsed_response = json.loads(response.text)
 time_series = parsed_response["Time Series (Daily)"]
-csv_name = "data/" + str(symbol) + "_prices.csv"
-csv_columns = ["open", "high", "low", "close", "volume"]
-f = open(csv_name, 'w+')
-writer = csv.DictWriter(f, fieldnames=csv_columns)
-writer.writeheader()
+
+csv_name = str(symbol) + "_prices.csv"
+csv_file_path = os.path.join(os.path.dirname(__file__), "..", "data", csv_name)
+csv_columns = ["timestamp", "open", "high", "low", "close", "volume"]
+for key in time_series.keys():
+    time_series[key]["timestamp"] = key
+with open(csv_file_path, "w+",newline="") as csv_file:
+    writer = csv.DictWriter(csv_file, fieldnames=csv_columns)
+    writer.writeheader()
+    for key in time_series.keys():
+        daily_open = time_series[key]["1. open"]
+        daily_high = time_series[key]["2. high"]
+        daily_low = time_series[key]["3. low"]
+        daily_close = time_series[key]["4. close"]
+        daily_volume = time_series[key]["5. volume"]
+        writer.writerow({"timestamp": key, "open": daily_open, "high": daily_high, "low": daily_low, "close": daily_close, "volume": daily_volume}) 
+    csv_file.close()
+    
+    
 last_refreshed = parsed_response["Meta Data"]["3. Last Refreshed"]
 latest_day = list(time_series.keys())[0]
 latest_close = float(time_series[latest_day]['4. close'])

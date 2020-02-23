@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
-
 
 from dotenv import load_dotenv
 import os
 import requests
 import csv
 import json
+from datetime import datetime
 
 invalid_call = """{
     \"Error Message\": \"Invalid API call. Please retry or visit the documentation (https://www.alphavantage.co/documentation/) for TIME_SERIES_DAILY.\"
@@ -23,6 +22,7 @@ while True:
         else:
             break
     symbol = symbol.upper()
+    request_time = datetime.now().strftime("%Y-%m-%d %I:%M %p")
     response = requests.get(f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={API_key}")
     if("Error Message" in response.text):
         print("Sorry, that was not a stock ticker. Please try again.")
@@ -41,14 +41,20 @@ latest_close = float(time_series[latest_day]['4. close'])
 recent_high = float(time_series[latest_day]['2. high'])
 recent_low = float(time_series[latest_day]['3. low'])
 
-
+for key in time_series.keys():
+    day_high = float(time_series[key]['2. high'])
+    day_low = float(time_series[key]['3. low'])
+    if (day_high > recent_high):
+        recent_high = day_high
+    if(day_low < recent_low):
+        recent_low = day_low
 
 data = response.json()["Time Series (Daily)"]
 print("-------------------------")
 print(f"SELECTED SYMBOL: {symbol}")
 print("-------------------------")
 print("REQUESTING STOCK MARKET DATA...")
-print("REQUEST AT: 2018-02-20 02:00pm")
+print(f"REQUEST AT: {request_time}")
 print("-------------------------")
 print(f"LATEST DAY: {last_refreshed}")
 print(f"LATEST CLOSE: ${latest_close:.2f}")

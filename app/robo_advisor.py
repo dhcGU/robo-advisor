@@ -81,6 +81,14 @@ latest_close = float(time_series[latest_day]['4. close'])
 recent_high = float(time_series[latest_day]['2. high'])
 recent_low = float(time_series[latest_day]['3. low'])
 
+if(tomorrows_prediction == True):
+    recommendation = "Buy!"
+    direction = "increase"
+else:
+    recommendation = "Do not buy/Sell!"
+    direction = "decrease"
+
+
 for key in time_series.keys():
     day_high = float(time_series[key]['2. high'])
     day_low = float(time_series[key]['3. low'])
@@ -104,8 +112,9 @@ print(f"LATEST CLOSE: ${latest_close:.2f}")
 print(f"RECENT HIGH: ${recent_high:.2f}")
 print(f"RECENT LOW: ${recent_low:.2f}")
 print("-------------------------")
-print("RECOMMENDATION: BUY!")
-print("RECOMMENDATION REASON: TODO")
+print(f"RECOMMENDATION: {recommendation}")
+print("RECOMMENDATION REASON: " + f"""\nOur machine learnin algorithm analyzed {symbol}'s price changes for the past 100 days.
+It predicted its returns with {acc_score*100:.2f}% accuracy and expects its price to {direction} tomorrow!""")
 print("-------------------------")
 print("HAPPY INVESTING!") 
 print("-------------------------") 

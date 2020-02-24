@@ -12,6 +12,12 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 
 invalid_call = """{
     \"Error Message\": \"Invalid API call. Please retry or visit the documentation (https://www.alphavantage.co/documentation/) for TIME_SERIES_DAILY.\"
@@ -19,7 +25,7 @@ invalid_call = """{
 
 load_dotenv()
 API_key = os.environ.get("ALPHAVANTAGE_API_KEY","something isnt right")
-print(API_key) 
+SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY","missing sendgrid api key")
 
 while True:
     while True:
@@ -59,9 +65,7 @@ with open(csv_name, "w+",newline="") as csv_file:
     csv_file.close()
 
 pandas_data = pd.read_csv(csv_name)
-pandas_data["previousDay"] = 0
 pandas_data['%change'] = (pandas_data['close']-pandas_data['open'])/pandas_data['open']
-
 
 x = pandas_data.iloc[:-1,1:6]
 y = pandas_data.iloc[1:,6]
@@ -77,13 +81,26 @@ acc_score = accuracy_score(y_true=y_test, y_pred=test_predictions)
 to_predict = pandas_data.iloc[1:,1:6]
 real_predictions = increasing_price_classifier.predict(to_predict)
 tomorrows_prediction = real_predictions[-1]
+if(tomorrows_prediction == True):
+    recommendation = "Buy!"
+    direction = "increase"
+else:
+    recommendation = "Do not buy/Sell!"
+    direction = "decrease"
 
+price_plot = sns.lineplot(pandas_data["timestamp"], pandas_data["close"])
+price_plot.set(xlabel="Day",ylabel="Closing Price (USD)")
+price_plot.set_title(f"{symbol} Price Over Past 100 Days")
+plt.show()
 
 last_refreshed = parsed_response["Meta Data"]["3. Last Refreshed"]
 latest_day = list(time_series.keys())[0]
 latest_close = float(time_series[latest_day]['4. close'])
 recent_high = float(time_series[latest_day]['2. high'])
 recent_low = float(time_series[latest_day]['3. low'])
+
+
+
 
 for key in time_series.keys():
     day_high = float(time_series[key]['2. high'])
@@ -95,6 +112,7 @@ for key in time_series.keys():
 
 fiftytwo_week_high = recent_high
 fiftytwo_week_low = recent_low
+
 weekly_keys = list(weekly_time_series.keys())
 for i in range(52):
     week_high = float(weekly_time_series[weekly_keys[i]]['2. high'])
@@ -121,8 +139,10 @@ print("-------------------------")
 print(f"52 WEEK HIGH: ${fiftytwo_week_high:.2f}")
 print(f"52 WEEK LOW: ${fiftytwo_week_low:.2f}")
 print("-------------------------")
-print("RECOMMENDATION: BUY!")
-print("RECOMMENDATION REASON: TODO")
+print(f"RECOMMENDATION: {recommendation}")
+print("RECOMMENDATION REASON: " + f"""\nOur machine learnin algorithm analyzed {symbol}'s price changes for the past 100 days.
+It predicted its returns with {acc_score*100:.2f}% accuracy and expects its price to {direction} tomorrow!""")
 print("-------------------------")
 print("HAPPY INVESTING!") 
 print("-------------------------") 
+

@@ -18,6 +18,16 @@ from sendgrid.helpers.mail import Mail
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+def hasNumber(string):
+    return any(ch.isdigit() for ch in string)
+
+def render_email(symbol, change):
+    html = "<div><br>"
+    html += "<b>Alert!</b><br>"
+    html += f"{symbol}\'s price has swung by {change*100:.2f}% in the past day!<br>"
+    html += f"Search for {symbol} with Robo Advisor for more information and a recommendation.<br>"
+    html += "</div>"
+    return html
 
 invalid_call = """{
     \"Error Message\": \"Invalid API call. Please retry or visit the documentation (https://www.alphavantage.co/documentation/) for TIME_SERIES_DAILY.\"
@@ -26,11 +36,22 @@ invalid_call = """{
 load_dotenv()
 API_key = os.environ.get("ALPHAVANTAGE_API_KEY","something isnt right")
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY","missing sendgrid api key")
-
+email = ""
+while True:
+    answer = input("Would you like to receive automatic alerts about large changes in the stocks you research? (y/n)\n")
+    if (answer.lower() == 'y'):
+        email = input('What is your email address?\n')
+        break
+    elif(answer.lower() == 'n'):
+        break
+    else:
+        print("Sorry, I didn't understant that. Please enter \'y\' or \'n\'")
+print("Note: Once a valid stock ticker is entered, a line graph of its price over the past 100 days will open in a new window.")
+print("To proceed to the stocks information and recommendation, that window must be closed.")
 while True:
     while True:
         symbol = input("Enter a stock ticker to pull information and recommendation: ")
-        if(len(symbol) < 1 or len(symbol) > 5):
+        if(len(symbol) < 1 or len(symbol) > 5 or hasNumber(symbol)):
             print("Sorry, that ticker is not valid. Please try again.")
         else:
             break
@@ -89,8 +110,9 @@ else:
     direction = "decrease"
 
 price_plot = sns.lineplot(pandas_data["timestamp"], pandas_data["close"])
-price_plot.set(xlabel="Day",ylabel="Closing Price (USD)")
+price_plot.set(xlabel="Days",ylabel="Closing Price (USD)")
 price_plot.set_title(f"{symbol} Price Over Past 100 Days")
+price_plot.set(xticklabels=[])
 plt.show()
 
 last_refreshed = parsed_response["Meta Data"]["3. Last Refreshed"]
@@ -100,7 +122,14 @@ recent_high = float(time_series[latest_day]['2. high'])
 recent_low = float(time_series[latest_day]['3. low'])
 
 
-
+recent_change = (recent_high - recent_low)/recent_low
+if(recent_change > 0.04):
+    if(email != ""):
+        client = SendGridAPIClient(SENDGRID_API_KEY)
+        subject = f"{symbol} Price Movements from Robo Banking Advisor"
+        content = render_email(symbol, recent_change)
+        message = Mail(from_email="Advisor@Robo.ai", to_emails=email,subject=subject,html_content=content)
+        client.send(message)
 
 for key in time_series.keys():
     day_high = float(time_series[key]['2. high'])
@@ -114,7 +143,9 @@ fiftytwo_week_high = recent_high
 fiftytwo_week_low = recent_low
 
 weekly_keys = list(weekly_time_series.keys())
-for i in range(52):
+Min_of_52_and_available_information = min([52,len(weekly_keys)])
+
+for i in range(Min_of_52_and_available_information):
     week_high = float(weekly_time_series[weekly_keys[i]]['2. high'])
     week_low = float(weekly_time_series[weekly_keys[i]]['3. low'])
     if (week_high > fiftytwo_week_high):

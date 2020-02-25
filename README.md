@@ -1,1 +1,19 @@
 # robo-advisor
+
+Robo advisor is a command line python program. To run this program, fork the repository and download it to your machine. <br>From a terminal/command line window configured with Python in your path, you can execute the program with the following command in the robo-advisor directory (adjust the slash accordingly depending on your operating system):
+```
+python app/robo_advisor.py
+```
+
+This program requires the dotenv, os, requests, csv, json, datetime, pandas, sklearn, sendrgrid, seaborn, and matplotlib packages/modules to be installed prior to use. These packages can be installed using pip's install command and the requirements.txt file as follows:
+```
+pip install -r requirements.txt
+```
+
+The fundamental operations of the robo advisor program require an AlphaVantage API key. The app directory must contain a .env file that has an "ALPHAVANTAGE_API_KEY" variable that stores a valid API key. You must register with AlphaVantage to receive an [AlphaVantage API Key](https://www.alphavantage.co).<br>
+ To use the email features of this program, the directory in which shopping_cart.py is run __must__ have a .env file with an environment variable named "SENDGRID_API_KEY" that stores a valid sengrid API key. To obtain an API key, [sign up for a free account](https://signup.sendgrid.com/). You must verify your account and can then [create an API Key](https://app.sendgrid.com/settings/api_keys).
+<br>
+### Functionality
+  <p>Robo advisor ouputs an introductory prompt describing its purpose. It then prompts the user to indicate if they would like to receive email alerts about price changes. If the user ersponds 'y', they must enter their email. It then warns the user that a valid stock ticker will open a new window with a plot of that stock's prices which must be closed for the program to continue. If the user enters an invalid ticker, they are informed the ticker was not valid and given basic parameters for stock tickers. In order to be valid, the enetered ticker must succesfully return a response from the AlphaVantage API</p><br>
+  <p> That tickers daily data from the past 100 days and weekly data are gathered from AlphaVantage using the requests library. A window will open displaying a line graph of that stock's price of the past 100 days that has been constructed using seaborn. The csv module is used to write the daily open, high, low, close, and volume to a csv file. That file will be added to the data directory with the filename <StockTicker>_prices.csv. Pandas converts this csv into a dataframe and calculates each days' return. Each days' open, close, high, low, close and volume are fed as inputs to a Sci-kit decision tree classifier, not including the latest day. The model uses each day's return as a target and is trained to predict if each day's returns are positve (greater than 0). 2/3s of the daily data is used to train the model and 1/3 is used for testing. After testing, the accuracy of the model is stored. The model then makes predictions including the latest day and its prediction for the following day (presumably the day after Robo Advisor is being run). This prediction is used as a recommendation to buy or sell the stock.</p><br>
+  <p> The past 100 days' information is used to find the recent high and recent low. The past 52 weeks (or all available data if the stock has less than 52 weeks of available data) is used to find the 52 week high and 52 week low. Robo Advisor outputs the symbol the user entered, the time at which it was executed, the most recent day that information was available, that days' close, high, and low, the 52 week high and low, and Robo Advisor's recommendation. If the stocks price changed by more than 5% in the last available day and the user opted to receive email alerts, the user sent an email indicating the degree to which the stock's price changed and suggesting they use Robo Advisor for more information and a recommendation.</p>

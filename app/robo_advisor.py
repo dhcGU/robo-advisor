@@ -18,6 +18,8 @@ from sendgrid.helpers.mail import Mail
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+request_time = datetime.now().strftime("%Y-%m-%d %I:%M %p")
+
 def hasNumber(string):
     return any(ch.isdigit() for ch in string)
 
@@ -37,6 +39,7 @@ load_dotenv()
 API_key = os.environ.get("ALPHAVANTAGE_API_KEY","something isnt right")
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY","missing sendgrid api key")
 email = ""
+print("Welcome to Robo Advisor, a tool for stock research and recommendations!")
 while True:
     answer = input("Would you like to receive automatic alerts about large changes in the stocks you research? (y/n)\n")
     if (answer.lower() == 'y'):
@@ -52,11 +55,10 @@ while True:
     while True:
         symbol = input("Enter a stock ticker to pull information and recommendation: ")
         if(len(symbol) < 1 or len(symbol) > 5 or hasNumber(symbol)):
-            print("Sorry, that ticker is not valid. Please try again.")
+            print("Sorry, that ticker is not valid. Please try again. Most stock tickers are all letters and 1-5 characters long.")
         else:
             break
     symbol = symbol.upper()
-    request_time = datetime.now().strftime("%Y-%m-%d %I:%M %p")
     response = requests.get(f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={API_key}")
     weekly_response = requests.get(f"https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY&symbol={symbol}&apikey={API_key}")
     if("Error Message" in response.text):
@@ -123,13 +125,16 @@ recent_low = float(time_series[latest_day]['3. low'])
 
 
 recent_change = (recent_high - recent_low)/recent_low
-if(recent_change > 0.04):
+if(recent_change > 0.05):
     if(email != ""):
         client = SendGridAPIClient(SENDGRID_API_KEY)
         subject = f"{symbol} Price Movements from Robo Banking Advisor"
         content = render_email(symbol, recent_change)
         message = Mail(from_email="Advisor@Robo.ai", to_emails=email,subject=subject,html_content=content)
-        client.send(message)
+        try:
+            client.send(message)
+        except:
+            print("",end="") #ignore bad email addresses
 
 for key in time_series.keys():
     day_high = float(time_series[key]['2. high'])
@@ -171,8 +176,8 @@ print(f"52 WEEK HIGH: ${fiftytwo_week_high:.2f}")
 print(f"52 WEEK LOW: ${fiftytwo_week_low:.2f}")
 print("-------------------------")
 print(f"RECOMMENDATION: {recommendation}")
-print("RECOMMENDATION REASON: " + f"""\nOur machine learnin algorithm analyzed {symbol}'s price changes for the past 100 days.
-It predicted its returns with {acc_score*100:.2f}% accuracy and expects its price to {direction} tomorrow!""")
+print("RECOMMENDATION REASON: " + f"""\nOur machine learning algorithm analyzed {symbol}'s price changes for the past 100 days.
+It used a Decision Tree Classifier to predict its returns with {acc_score*100:.2f}% accuracy and expects its price to {direction} tomorrow!""")
 print("-------------------------")
 print("HAPPY INVESTING!") 
 print("-------------------------") 

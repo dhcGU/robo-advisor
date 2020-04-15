@@ -21,9 +21,28 @@ import matplotlib.pyplot as plt
 request_time = datetime.now().strftime("%Y-%m-%d %I:%M %p")
 
 def hasNumber(string):
+    """
+    Returns true if string contains a number and false otherwise
+
+    Params
+        string (string) the string being checked for numeric characters
+
+    Example
+        hasNumber("abcd45fge")
+    """
     return any(ch.isdigit() for ch in string)
 
 def render_email(symbol, change):
+    """
+    Returns a string of html text containing information about the price movement of a stock
+
+    Params
+        symbol (string) the stock whose price has changed
+        change (numeric) the decimal percentage by which the stock's price changed
+    
+    Example
+        render_email("AAPL", 0.1)
+    """
     html = "<div><br>"
     html += "<b>Alert!</b><br>"
     html += f"{symbol}\'s price has swung by {change*100:.2f}% in the past day!<br>"
@@ -32,12 +51,42 @@ def render_email(symbol, change):
     return html
 
 def to_usd(num):
+    """Returns the integer or float stored in 'num' formatted with a dollar sign and 2 decimal points
+    
+    Params
+        num (numeric) number to be formatted
+        
+    Example
+        to_usd(4.99)
+    """
     return f"${num:.2f}"
 
 def compile_url(timeperiod, symbol, API_KEY):
+    """
+    Generates the url for an AlphaVantage API call given the time series, stock symbol, and an API key
+
+    Params
+        timeperiod (string) the time periods in all uppercase, ie. "DAILY"
+        symbol (string) the stock being queried
+        API_KEY (string) a valid AlphaVantage API Key
+    
+    Example
+        compile_url("DAILY", "AAPL", "MadeUpKey")
+    """
     return f"https://www.alphavantage.co/query?function=TIME_SERIES_{timeperiod}&symbol={symbol}&apikey={API_KEY}"
 
 def write_to_csv(csv_name, csv_columns, time_series):
+    """
+    Given the csv's name, its columns, and a series of data, writes the series' data to a csv with the specified columns
+
+    Params
+        csv_name (string) the path and name of the csv being written
+        csv_columns (list) the column headers of the csv's table
+        time_series (dict) the data to be written into the csv
+    
+    Example
+        write_to_csv("my_data.csv", ["column1","column2"], {"column1" : "valueA", "column2" : "valueB"}
+    """
     with open(csv_name, "w+",newline="") as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=csv_columns)
             writer.writeheader()
@@ -97,6 +146,7 @@ if __name__ == "__main__":
     csv_columns = ["timestamp", "open", "high", "low", "close", "volume"]
     write_to_csv(csv_name, csv_columns, time_series)
 
+    #compute necessary percentages and perform prediction using Sklearn decision tree classifier
     pandas_data = pd.read_csv(csv_name)
     pandas_data['%change'] = (pandas_data['close']-pandas_data['open'])/pandas_data['open']
 
@@ -122,6 +172,7 @@ if __name__ == "__main__":
         recommendation = "Do not buy/Sell!"
         direction = "decrease"
 
+    #display graph of stock's price
     price_plot = sns.lineplot(pandas_data["timestamp"], pandas_data["close"])
     price_plot.set(xlabel="Days",ylabel="Closing Price (USD)")
     price_plot.set_title(f"{symbol} Price Over Past 100 Days")
@@ -134,7 +185,7 @@ if __name__ == "__main__":
     recent_high = float(time_series[latest_day]['2. high'])
     recent_low = float(time_series[latest_day]['3. low'])
 
-
+    #if large percentage change, email the user
     recent_change = (recent_high - recent_low)/recent_low
     if(recent_change > 0.05):
         if(email != ""):
@@ -147,6 +198,7 @@ if __name__ == "__main__":
             except:
                 print("",end="") #ignore bad email addresses
 
+    #calculate relevant highs and lows
     for key in time_series.keys():
         day_high = float(time_series[key]['2. high'])
         day_low = float(time_series[key]['3. low'])
